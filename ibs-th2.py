@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import bluepy
-import yaml
+import ruamel.yaml as yaml
 import influxdb
 
 sensors_config = 'sensors.yaml'
@@ -34,11 +34,12 @@ def get_data(mac):
     device = bluepy.btle.Peripheral(mac)
     c = device.readCharacteristic(temp_handle)
     ba = b2bat(device.readCharacteristic(battery_handle))
+    device.disconnect()
     return (c2temp(c), c2hum(c), ba)
 
 if __name__ == '__main__':
     conf = load_config()
-    clients = map(lambda h: influxdb.InfluxDBClient(host=h, timeout=1), conf['hosts'])
+    clients = list(map(lambda h: influxdb.InfluxDBClient(host=h), conf['hosts']))
     for (mac, client) in [(mac, client) for mac in conf['sensors'] for client in clients]:
         try:
             (te, hu, ba) = get_data(mac)
@@ -46,4 +47,4 @@ if __name__ == '__main__':
         except Exception as e:
             # pass
             print(e)
-            
+
