@@ -20,31 +20,28 @@ def c2hum(char):
 def b2bat(char):
     return int.from_bytes(char[0:2], 'little')/100.0
 
-def post_influxdb(client, mac, te, hu, ba):
+def post_influxdb(client, mac, te, hu):
     body = [{
         'measurement': 'sensor',
-        'fields': {'hu': hu, 'te': te, 'ba': ba,},
+        'fields': {'hu': hu, 'te': te,},
         'tags' : { 'address':  mac },
     }]
     return client.write_points(body, time_precision='s', database="sensor")
 
 def get_data(mac):
     temp_handle = 0x24
-    battery_handle = 0x26
     device = bluepy.btle.Peripheral(mac)
     c = device.readCharacteristic(temp_handle)
-    ba = b2bat(device.readCharacteristic(battery_handle))
     device.disconnect()
-    return (c2temp(c), c2hum(c), ba)
+    return (c2temp(c), c2hum(c),)
 
 if __name__ == '__main__':
     conf = load_config()
-    clients = list(map(lambda h: influxdb.InfluxDBClient(host=h), conf['hosts']))
+    clients = list(map(lambda h: influxdb.InfluxDBClient(host=h, timeout=5), conf['hosts']))
     for (mac, client) in [(mac, client) for mac in conf['sensors'] for client in clients]:
         try:
-            (te, hu, ba) = get_data(mac)
-            post_influxdb(client, mac, te, hu, ba)
+            (te, hu) = get_data(mac)
+            post_influxdb(client, mac, te, hu)
         except Exception as e:
             # pass
             print(e)
-
