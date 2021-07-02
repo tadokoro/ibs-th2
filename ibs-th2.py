@@ -26,7 +26,7 @@ def post_influxdb(client, mac, te, hu):
         'fields': {'hu': hu, 'te': te,},
         'tags' : { 'address':  mac },
     }]
-    return client.write_points(body, time_precision='s', database="sensor")
+    return client.write_points(body, time_precision='s')
 
 def get_data(mac):
     temp_handle = 0x24
@@ -37,11 +37,11 @@ def get_data(mac):
 
 if __name__ == '__main__':
     conf = load_config()
-    clients = list(map(lambda h: influxdb.InfluxDBClient(host=h, timeout=5), conf['hosts']))
+    clients = list(map(lambda h: influxdb.InfluxDBClient(host=h, timeout=5, database='sensor', username=conf['user'], password=conf['password']), conf['hosts']))
     for (mac, client) in [(mac, client) for mac in conf['sensors'] for client in clients]:
         try:
             (te, hu) = get_data(mac)
             post_influxdb(client, mac, te, hu)
         except Exception as e:
-            # pass
-            print(e)
+            pass
+            #print(e)
