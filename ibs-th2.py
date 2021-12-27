@@ -10,9 +10,13 @@ def load_config():
     with open(sensors_config) as f:
         conf = yaml.safe_load(f)
         return conf
-        
+
 def c2temp(char):
-    return int.from_bytes(char[0:2], 'little')/100.0
+    val = int.from_bytes(char[0:2], 'little')
+    if val >= 0xff00:
+        val = -(0xffff - val + 1)
+
+    return val/100.0
 
 def c2hum(char):
     return int.from_bytes(char[2:4], 'little')/100.0
