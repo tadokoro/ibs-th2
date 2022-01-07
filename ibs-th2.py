@@ -13,7 +13,7 @@ def load_config():
 
 def c2temp(char):
     val = int.from_bytes(char[0:2], 'little')
-    if val >= 0xff00:
+    if val >= 0xf000:
         val = -(0xffff - val + 1)
 
     return val/100.0
